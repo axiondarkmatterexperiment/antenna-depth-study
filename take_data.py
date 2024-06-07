@@ -241,6 +241,7 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             print("beta is:")
             print(beta)
             id = id+1
+        motor_steps_per_scan=-motor_steps_per_scan
             
 
     # close the database
