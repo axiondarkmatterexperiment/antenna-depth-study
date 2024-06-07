@@ -26,6 +26,7 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
     #Send the command to create the datatable in the postgres database. Here we type things just like queries in the postgres command line
     cur.execute("""CREATE TABLE IF NOT EXISTS na_scans(
                 id INT PRIMARY KEY,
+                motor_steps INT,
                 f BYTEA,
                 S11_real BYTEA,
                 S11_imag BYTEA,
@@ -69,6 +70,21 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             '''
             
             Read the motor position
+            
+            '''
+
+            # send the motor the instructions for turning one time
+            Message = "EP" #I think this might be the right command?
+            encodeMessage = Message.encode()
+            Send = header + encodeMessage + end
+            sock.sendto(Send, (D_IP, UDP_PORT))
+            recMessage = sock.recv(1024).decode()
+            print("motor steps "+recMessage[2:])
+            motor_steps = recMessage[2:]
+
+            ''''
+            
+            Set VNA trigger
             
             '''
 
@@ -177,9 +193,9 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             '''
             # insert the variables above into the table we created.
             # the numpy arrays need to be saved as BYTEA datatype which is what the pickle dumps function converts them into
-            cur.execute("""INSERT INTO na_scans (id, f, S11_real, S11_imag, S11_phase, S21_real, S21_imag, f0_trans, f0_refl, QL_trans, beta) VALUES
-                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-                        """, (id, pickle.dumps(f), pickle.dumps(S11_real), pickle.dumps(S11_imag), pickle.dumps(S11_phase), pickle.dumps(S21_real), pickle.dumps(S21_imag), f0_trans, f0_refl, QL_trans, beta))
+            cur.execute("""INSERT INTO na_scans (id, motor_steps, f, S11_real, S11_imag, S11_phase, S21_real, S21_imag, f0_trans, f0_refl, QL_trans, beta) VALUES
+                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                        """, (id, motor_steps, pickle.dumps(f), pickle.dumps(S11_real), pickle.dumps(S11_imag), pickle.dumps(S11_phase), pickle.dumps(S21_real), pickle.dumps(S21_imag), f0_trans, f0_refl, QL_trans, beta))
 
             # I think this is just to actually submit these commands to the postgres command line, but I'm not sure
             conn.commit()
@@ -214,20 +230,6 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             # I'm not totally sure about the syntax of the fetchone command
             fnew = pickle.loads(cur.fetchone()[0])
             # print(fnew)
-
-            # tell the motor to go back to waiting and confirm that it's now waiting again
-            inst.write("TRIG:WAIT WTRG")
-            # print(inst.query("TRIG:STAT?"))
-
-            # print any messages that the motor is sending back
-            # recMessage = sock.recv(1024).decode()
-            # print(recMessage[2:])
-
-            # pow = np.add(np.square(S11_imag), np.square(S11_real))
-            # pow = 10*(np.log10(pow))
-            # plt.figure(figsize=(12,9))
-            # plt.plot(f, pow)
-            # plt.savefig("C:\\Users\\senna\\OneDrive\\Documents\\UW\\ADMX\\plot.pdf", format = 'pdf', bbox_inches = 'tight')
 
             #print beta
             print("beta is:")
