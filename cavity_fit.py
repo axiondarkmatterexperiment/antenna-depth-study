@@ -32,7 +32,7 @@ def reflection_fit(freq, real_amp, im_amp, phase):
     df1 = freq[np.argmin(gamma_sq_Q1)]
     gamma_sq_Q2 = np.abs(gamma_sq[-f0_arg:] - (C - delta_y/2))
     df2 = freq[np.argmin(gamma_sq_Q2)]
-    delta_f = df2 - df1
+    delta_f = np.abs(df2 - df1)
 
     # define a guess for Q
     Q = f0/delta_f
@@ -80,7 +80,7 @@ def transmission_fit(freq, real_amp, im_amp):
     df1 = freq[np.argmin(gamma_sq_Q1)]
     gamma_sq_Q2 = np.abs(gamma_sq[-f0_arg:] - (C + delta_y/2))
     df2 = freq[np.argmin(gamma_sq_Q2)]
-    delta_f = df2 - df1
+    delta_f = np.abs(df1 - df2)
 
     # define a guess for Q
     Q = f0/delta_f
