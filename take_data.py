@@ -10,10 +10,8 @@ import matplotlib.pyplot as plt
 import time
 
 def take_data(motor_steps_per_scan, num_scans, num_cycles):
-    '''
-    
+    ''' 
     Set up connections to the psql database, VNA, and motor
-    
     '''
 
     # define the connection to the postgres database
@@ -21,12 +19,10 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
 
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
-    cur.execute('DROP TABLE na_scans;')
 
     #Send the command to create the datatable in the postgres database. Here we type things just like queries in the postgres command line
     cur.execute("""CREATE TABLE IF NOT EXISTS na_scans(
                 id INT PRIMARY KEY,
-                motor_steps INT,
                 f BYTEA,
                 S11_real BYTEA,
                 S11_imag BYTEA,
@@ -37,7 +33,7 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
                 f0_refl REAL,
                 QL_trans REAL,
                 beta REAL
-    );
+                );
                 """)
 
     # connect to the network analyzer and ask what state it's in
@@ -63,7 +59,14 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
     Begin data taking cycles
     
     '''
-    id = 1
+    
+    cur.execute("SELECT id FROM na_scans ORDER BY id DESC;")
+    try: 
+        id=cur.fetchone()[0]
+    except:
+        id = 0
+    id = id+1
+
     for n in np.arange(num_cycles):
         for m in np.arange(num_scans):
 
@@ -73,14 +76,19 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             
             '''
 
-            # send the motor the instructions for turning one time
-            Message = "EP" #I think this might be the right command?
-            encodeMessage = Message.encode()
-            Send = header + encodeMessage + end
-            sock.sendto(Send, (D_IP, UDP_PORT))
-            recMessage = sock.recv(1024).decode()
-            print("motor steps "+recMessage[2:])
-            motor_steps = recMessage[2:]
+            # # send the motor the instructions for turning one time
+            # Message = "SK" #I think this might be the right command?
+            # encodeMessage = Message.encode()
+            # Send = header + encodeMessage + end
+            # sock.sendto(Send, (D_IP, UDP_PORT))
+            
+            # Message = "EP" #I think this might be the right command?
+            # encodeMessage = Message.encode()
+            # Send = header + encodeMessage + end
+            # sock.sendto(Send, (D_IP, UDP_PORT))
+            # recMessage = sock.recv(2048).decode()
+            # print("motor steps "+recMessage)
+            # motor_steps = int(recMessage[5:])
 
             ''''
             
@@ -193,9 +201,9 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             '''
             # insert the variables above into the table we created.
             # the numpy arrays need to be saved as BYTEA datatype which is what the pickle dumps function converts them into
-            cur.execute("""INSERT INTO na_scans (id, motor_steps, f, S11_real, S11_imag, S11_phase, S21_real, S21_imag, f0_trans, f0_refl, QL_trans, beta) VALUES
-                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-                        """, (id, motor_steps, pickle.dumps(f), pickle.dumps(S11_real), pickle.dumps(S11_imag), pickle.dumps(S11_phase), pickle.dumps(S21_real), pickle.dumps(S21_imag), f0_trans, f0_refl, QL_trans, beta))
+            cur.execute("""INSERT INTO na_scans (id, f, S11_real, S11_imag, S11_phase, S21_real, S21_imag, f0_trans, f0_refl, QL_trans, beta) VALUES
+                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                        """, (id, pickle.dumps(f), pickle.dumps(S11_real), pickle.dumps(S11_imag), pickle.dumps(S11_phase), pickle.dumps(S21_real), pickle.dumps(S21_imag), np.abs(f0_trans), np.abs(f0_refl), np.abs(QL_trans), np.abs(beta)))
 
             # I think this is just to actually submit these commands to the postgres command line, but I'm not sure
             conn.commit()
@@ -203,9 +211,9 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             '''
             Move the motor
             '''
-
             # send the motor the instructions for turning one time
             Message = "DI" + str(motor_steps_per_scan)
+            print(Message)
             encodeMessage = Message.encode()
             Send = header + encodeMessage + end
             sock.sendto(Send, (D_IP, UDP_PORT))
@@ -215,7 +223,7 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             encodeMessage = Message.encode()
             Send = header + encodeMessage + end
             sock.sendto(Send, (D_IP, UDP_PORT))
-            time.sleep(motor_steps_per_scan/2000)
+            time.sleep(np.abs(motor_steps_per_scan)/2000)
 
             # read out what we put in there
             cur.execute(
@@ -229,12 +237,11 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             # convert the numpy array f back into a numpy array from the BYTEA datatype
             # I'm not totally sure about the syntax of the fetchone command
             fnew = pickle.loads(cur.fetchone()[0])
-            # print(fnew)
 
-            #print beta
             print("beta is:")
             print(beta)
             id = id+1
+            
 
     # close the database
     cur.close()
