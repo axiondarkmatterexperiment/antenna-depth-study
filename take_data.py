@@ -130,7 +130,6 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             '''
             # find a best fit for the transmission data
             pt, pc = transmission_fit(f,S21_real, S21_imag)
-            print(pt[1])
 
             # save the variables from the transmission fit. These will be used for guesses in the reflection fit
             f0_trans = pt[2]
@@ -139,6 +138,12 @@ def take_data(motor_steps_per_scan, num_scans, num_cycles):
             print(f0_trans)
             print("loaded Q from transmission:")
             print(QL_trans)
+
+            pt_trans, pc_trans = transmission_fit(f,S21_real, S21_imag)
+            plt.figure(figsize=(12,9))
+            plt.plot(f, peak_func(f, *pt_trans))
+            plt.plot(f, np.add(np.square(S21_real), np.square(S21_imag)))
+            plt.savefig("C:\\Users\\senna\\OneDrive\\Documents\\UW\\ADMX\\plot_trans.pdf", format = 'pdf', bbox_inches = 'tight')
             
             time.sleep(5)
 

@@ -156,6 +156,12 @@ plt.plot(f, dip_func(f, *pt))
 plt.plot(f, np.add(np.square(S11_real), np.square(S11_imag)))
 plt.savefig("C:\\Users\\senna\\OneDrive\\Documents\\UW\\ADMX\\plot.pdf", format = 'pdf', bbox_inches = 'tight')
 
+pt_trans, pc_trans = transmission_fit(f,S21_real, S21_imag)
+plt.figure(figsize=(12,9))
+plt.plot(f, peak_func(f, *pt_trans))
+plt.plot(f, np.add(np.square(S21_real), np.square(S21_imag)))
+plt.savefig("C:\\Users\\senna\\OneDrive\\Documents\\UW\\ADMX\\plot_trans.pdf", format = 'pdf', bbox_inches = 'tight')
+
 plt.figure(figsize=(12,9))
 plt.plot(f, S11_phase)
 # plt.plot(f, S11_imag)
@@ -164,6 +170,7 @@ plt.savefig("C:\\Users\\senna\\OneDrive\\Documents\\UW\\ADMX\\plot_imag.pdf", fo
 
 #print beta
 print(beta)
+print(pt_trans[1])
 
 # close the database
 cur.close()

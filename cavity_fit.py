@@ -76,7 +76,7 @@ def transmission_fit(freq, real_amp, im_amp):
 
     # find bandwidth
     gamma_sq_Q1 = np.abs(gamma_sq[f0_arg:] - (C + delta_y/2))
-    gamma_sq[-f0_arg:]
+    #gamma_sq[-f0_arg:] #don't know why this line was here
     df1 = freq[np.argmin(gamma_sq_Q1)]
     gamma_sq_Q2 = np.abs(gamma_sq[-f0_arg:] - (C + delta_y/2))
     df2 = freq[np.argmin(gamma_sq_Q2)]
